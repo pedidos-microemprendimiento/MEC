@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Armá tu pedido</title>
+<style>
+@font-face{font-family:"Montserrat Alternates";font-style:normal;font-weight:500;font-display:swap;
+  src:url("fonts/MontserratAlternates-Medium.woff2") format("woff2"),url("fonts/MontserratAlternates-Medium.woff") format("woff")}
+@font-face{font-family:"Montserrat Alternates";font-style:italic;font-weight:500;font-display:swap;
+  src:url("fonts/MontserratAlternates-MediumItalic.woff2") format("woff2"),url("fonts/MontserratAlternates-MediumItalic.woff") format("woff")}
+/* Paleta tomada de los logos: negro de la luna, durazno del sol, verde bosque y vino del script */
+:root{
+  color-scheme: light;
+  --bg:#F6F2EB; --surface:#FDFBF7; --ink:#2A211D; --muted:#6F625A; --line:#E4DACE;
+  --accent:#2F4A33; --accent-ink:#FFFFFF; --glow:#E8BC9A; --glow-ink:#2A211D; --wine:#6B2D26; --error:#A33A2D;
+  --serif:"Montserrat Alternates", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sans:"Montserrat Alternates", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;font-synthesis:none}
+body.has-bar{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:560px;margin:0 auto;padding:calc(28px + env(safe-area-inset-top,0px)) 20px 56px}
+.view[hidden]{display:none}
+
+/* membrete */
+.masthead{margin:0 0 30px;padding:0 0 26px;border-bottom:1px solid var(--line);text-align:center}
+.logos{display:flex;justify-content:center;align-items:center;gap:clamp(10px,4vw,22px)}
+.logos img{display:block;height:clamp(92px,27vw,124px);width:auto;max-width:46%;object-fit:contain}
+.tagline{font-style:italic;margin:18px auto 0;color:var(--muted);max-width:38ch}
+.tagline:empty{display:none}
+
+h1{font-family:var(--serif);font-weight:500;font-size:clamp(1.9rem,8vw,2.5rem);line-height:1.1;margin:0 0 12px;letter-spacing:-.01em}
+.intro{margin:0 0 28px;color:var(--muted);max-width:44ch}
+h2{font-family:var(--serif);font-weight:500;font-size:1.2rem;margin:0 0 4px}
+.hint{font-style:italic;margin:0 0 14px;color:var(--muted);font-size:.95rem}
+
+/* tarjetas de combos */
+.combos{list-style:none;margin:0 0 28px;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:339px){.combos{grid-template-columns:1fr}}
+.combo{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:16px;
+  overflow:hidden;transition:border-color .2s,box-shadow .2s}
+.combo[data-on="true"]{border-color:var(--glow);box-shadow:0 0 0 2px var(--glow)}
+.photo{aspect-ratio:1/1;background:var(--line);position:relative;overflow:hidden}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.photo.empty{display:grid;place-items:center;color:var(--muted);font-size:.85rem;
+  background:repeating-linear-gradient(135deg,transparent 0 10px,rgba(111,98,90,.07) 10px 20px),var(--line)}
+.body{display:flex;flex-direction:column;flex:1;padding:12px 12px 14px}
+.combo h3{margin:0;font-size:1.02rem;font-weight:500;line-height:1.25}
+.combo p.desc{margin:4px 0 0;color:var(--muted);font-size:.9rem;line-height:1.35}
+.price{margin:10px 0 12px;font-family:var(--serif);font-size:1.25rem;line-height:1;color:var(--wine)}
+.price:empty{display:none}
+.step{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:auto}
+.step button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink);
+  font:500 1.3rem/1 var(--sans);cursor:pointer;display:grid;place-items:center;padding:0;flex:none}
+.step button:active{transform:scale(.94)}
+.step output{flex:1;min-width:0;height:40px;display:grid;place-items:center;border-radius:20px;font-weight:500;font-size:1.05rem;
+  font-variant-numeric:tabular-nums;transition:background .2s,color .2s}
+.combo[data-on="true"] output{background:var(--glow);color:var(--glow-ink)}
+
+/* resumen del pedido (aparece al elegir el primer combo) */
+.total{margin:0 0 38px;padding:18px 16px 16px;background:var(--surface);border:1px solid var(--line);border-radius:16px}
+.total[hidden]{display:none}
+.total ul{list-style:none;margin:10px 0 0;padding:0}
+.total li{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.total li span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
+.total-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding-top:14px}
+.total-row span{font-weight:500}
+.total-row strong{font-family:var(--serif);font-weight:400;font-size:1.7rem;line-height:1;color:var(--wine)}
+
+/* datos */
+.field{margin:0 0 18px}
+label{display:block;font-weight:500;margin:0 0 6px}
+input[type=text],input[type=tel]{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;padding:13px 14px;min-height:48px}
+input::placeholder{color:var(--muted);opacity:.75}
+.trap{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+#datos{scroll-margin-top:16px}
+
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+input:focus-visible{outline-offset:0}
+
+.error{margin:6px 0 14px;color:var(--error);font-weight:500;min-height:1.4em}
+.cta{width:100%;min-height:54px;border:0;border-radius:999px;background:var(--accent);color:var(--accent-ink);
+  font:500 1.08rem var(--sans);cursor:pointer;padding:14px 24px}
+.cta[disabled]{opacity:.6;cursor:progress}
+.demo{margin:14px 0 0;padding:10px 12px;border-radius:8px;background:var(--glow);color:var(--glow-ink);font-size:.9rem}
+
+/* barra fija: total + Finalizar */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);
+  box-shadow:0 -6px 20px rgba(42,33,29,.08);padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px));
+  transform:translateY(110%);visibility:hidden;transition:transform .25s ease,visibility .25s}
+.bar.show{transform:none;visibility:visible}
+.bar-in{max-width:560px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.bar-total{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.bar-total small{color:var(--muted);font-size:.85rem}
+.bar-total strong{font-family:var(--serif);font-weight:400;font-size:1.45rem;color:var(--wine)}
+.bar .cta{width:auto;min-height:48px;padding:12px 30px;flex:none}
+
+/* gracias */
+.thanks{padding-top:10px}
+.thanks .recap{list-style:none;margin:22px 0 28px;padding:0;border-top:1px solid var(--line)}
+.thanks .recap li{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.thanks .recap b{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.thanks .recap .sum{font-weight:500}
+.link{background:none;border:0;color:var(--accent);font:500 1rem var(--sans);text-decoration:underline;cursor:pointer;padding:8px 0}
+.thanks h1:focus{outline:none}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <!-- FORMULARIO -->
+  <section id="view-form" class="view">
+    <header class="masthead">
+      <div class="logos" id="logos"></div>
+      <p class="tagline" id="tagline"></p>
+    </header>
+
+    <h1 id="title"></h1>
+    <p class="intro" id="intro"></p>
+
+    <form id="form" novalidate>
+      <h2>Elegí tus combos</h2>
+      <p class="hint">Sumá la cantidad de los combos que quieras. No hace falta elegir todos.</p>
+      <ul class="combos" id="combos"></ul>
+
+      <section class="total" id="total" hidden aria-live="polite">
+        <h2>Tu pedido</h2>
+        <ul id="lines"></ul>
+        <div class="total-row"><span>Total</span><strong id="total-amount"></strong></div>
+      </section>
+
+      <section id="datos">
+        <h2>Tus datos</h2>
+        <p class="hint">Los usamos solo para contactarte por tu pedido.</p>
+        <div class="field">
+          <label for="nombre">Nombre y apellido</label>
+          <input type="text" id="nombre" name="nombre" autocomplete="name" placeholder="Ej.: María Pérez" required>
+        </div>
+        <div class="field">
+          <label for="telefono">Teléfono (WhatsApp)</label>
+          <input type="tel" id="telefono" name="telefono" autocomplete="tel" inputmode="tel" placeholder="Ej.: 351 123 4567" required>
+        </div>
+        <div class="trap" aria-hidden="true">
+          <label for="web">No completar este campo</label>
+          <input type="text" id="web" name="web" tabindex="-1" autocomplete="off">
+        </div>
+
+        <p class="error" id="error" role="alert"></p>
+        <button class="cta" id="send" type="submit">Enviar pedido</button>
+        <p class="demo" id="demo" hidden>Modo prueba: todavía no está conectado a tu planilla, así que este pedido no se guardaría.</p>
+      </section>
+    </form>
+  </section>
+
+  <!-- GRACIAS -->
+  <section id="view-thanks" class="view thanks" hidden>
+    <h1 id="thanks-title" tabindex="-1">¡Gracias!</h1>
+    <p class="intro">Tu pedido fue registrado. Nos estaremos contactando a la brevedad.</p>
+    <ul class="recap" id="recap"></ul>
+    <button class="link" id="again" type="button">Hacer otro pedido</button>
+  </section>
+
+</main>
+
+<!-- Barra fija con el total y el botón Finalizar -->
+<div class="bar" id="bar">
+  <div class="bar-in">
+    <div class="bar-total"><small id="bar-label">Total</small><strong id="bar-amount"></strong></div>
+    <button class="cta" id="finish" type="button">Finalizar</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   CONFIGURACIÓN — lo único que tenés que tocar
+   ========================================================= */
+const CONFIG = {
+  // Pegá acá la URL de tu Apps Script (termina en /exec).
+  SCRIPT_URL: "",
+  TITLE: "Armá tu pedido",
+  INTRO: "Elegí cuántos de cada combo querés y dejanos tus datos. Te escribimos para coordinar.",
+  TAGLINE: "Velas, esencias y exfoliantes en combos, armados en caja o en bolsita.",
+  LOGOS: [
+    { src: "fotos/logo-calante.png", alt: "Calante" },
+    { src: "fotos/logo-essenza-italiana.png", alt: "Essenza Italiana" }
+  ]
+};
+
+// Datos de cada combo:
+//   name  = nombre
+//   desc  = descripción corta (opcional)
+//   price = precio en pesos, solo el número (sin $ ni puntos)
+//   img   = foto: "fotos/combo1.jpg" o un link (opcional)
+// ¡IMPORTANTE! Los precios de abajo son DE EJEMPLO: reemplazalos por los tuyos antes de publicar.
+const COMBOS = [
+  { name: "Combo 1", desc: "", price: 10000, img: "" },
+  { name: "Combo 2", desc: "", price: 12000, img: "" },
+  { name: "Combo 3", desc: "", price: 14000, img: "" },
+  { name: "Combo 4", desc: "", price: 16000, img: "" },
+  { name: "Combo 5", desc: "", price: 18000, img: "" },
+  { name: "Combo 6", desc: "", price: 20000, img: "" },
+  { name: "Combo 7", desc: "", price: 22000, img: "" },
+  { name: "Combo 8", desc: "", price: 24000, img: "" }
+];
+/* ========================================================= */
+
+const MAX_QTY = 99;
+const qty = COMBOS.map(() => 0);
+const $ = id => document.getElementById(id);
+const money = n => n.toLocaleString("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+$("title").textContent = CONFIG.TITLE;
+$("intro").textContent = CONFIG.INTRO;
+$("tagline").textContent = CONFIG.TAGLINE;
+if (!CONFIG.SCRIPT_URL) $("demo").hidden = false;
+
+// Logos del membrete
+CONFIG.LOGOS.forEach(l => {
+  const img = new Image();
+  img.alt = l.alt; img.src = l.src;
+  img.onerror = () => img.remove();
+  $("logos").appendChild(img);
+});
+
+// Tarjetas
+const list = $("combos");
+COMBOS.forEach((c, i) => {
+  const li = document.createElement("li");
+  li.className = "combo";
+  li.dataset.on = "false";
+  li.innerHTML = `
+    <div class="photo"></div>
+    <div class="body">
+      <h3></h3>
+      <p class="desc"></p>
+      <div class="price"></div>
+      <div class="step" role="group">
+        <button type="button" data-d="-1">−</button>
+        <output aria-live="polite">0</output>
+        <button type="button" data-d="1">+</button>
+      </div>
+    </div>`;
+
+  const photo = li.querySelector(".photo");
+  const showEmpty = () => { photo.className = "photo empty"; photo.textContent = "Foto del combo"; };
+  if (c.img) {
+    const img = new Image();
+    img.alt = c.name; img.loading = "lazy";
+    img.onerror = showEmpty;
+    img.src = c.img;
+    photo.appendChild(img);
+  } else { showEmpty(); }
+
+  li.querySelector("h3").textContent = c.name;
+  const desc = li.querySelector(".desc");
+  if (c.desc) desc.textContent = c.desc; else desc.remove();
+  li.querySelector(".price").textContent = c.price ? money(c.price) : "";
+
+  li.querySelector(".step").setAttribute("aria-label", "Cantidad de " + c.name);
+  const [minus, plus] = li.querySelectorAll("button");
+  minus.setAttribute("aria-label", "Quitar uno de " + c.name);
+  plus.setAttribute("aria-label", "Sumar uno de " + c.name);
+  li.addEventListener("click", e => {
+    const b = e.target.closest("button[data-d]");
+    if (!b) return;
+    qty[i] = Math.min(MAX_QTY, Math.max(0, qty[i] + Number(b.dataset.d)));
+    li.querySelector("output").textContent = qty[i];
+    li.dataset.on = String(qty[i] > 0);
+    update();
+  });
+  list.appendChild(li);
+});
+
+/* ---------- Cálculos y resumen ---------- */
+function totalCombos(){ return qty.reduce((a, b) => a + b, 0); }
+function allPriced(){ return COMBOS.every((c, i) => qty[i] === 0 || c.price); }
+function totalAmount(){ return COMBOS.reduce((s, c, i) => s + (c.price || 0) * qty[i], 0); }
+
+let datosVisible = false;
+function update(){
+  const t = totalCombos();
+  const priced = allPriced();
+
+  // Resumen al final de los combos: aparece con el primer combo
+  $("total").hidden = t === 0;
+  const lines = $("lines");
+  lines.innerHTML = "";
+  COMBOS.forEach((c, i) => {
+    if (qty[i] === 0) return;
+    const li = document.createElement("li");
+    const a = document.createElement("span"); a.textContent = c.name + " × " + qty[i];
+    const b = document.createElement("span"); b.textContent = c.price ? money(c.price * qty[i]) : "";
+    li.append(a, b); lines.appendChild(li);
+  });
+  $("total-amount").textContent = priced ? money(totalAmount()) : "A confirmar";
+
+  // Barra fija
+  $("bar-label").textContent = priced ? "Total (" + t + (t === 1 ? " combo)" : " combos)") : t + (t === 1 ? " combo" : " combos");
+  $("bar-amount").textContent = priced ? money(totalAmount()) : "";
+  refreshBar();
+  if (t > 0) $("error").textContent = "";
+}
+function refreshBar(){
+  const show = totalCombos() > 0 && !datosVisible && !$("view-form").hidden;
+  $("bar").classList.toggle("show", show);
+  document.body.classList.toggle("has-bar", show);
+}
+
+// La barra se oculta cuando ya estás viendo el campo de nombre
+new IntersectionObserver(entries => {
+  datosVisible = entries[0].isIntersecting;
+  refreshBar();
+}, { rootMargin: "0px 0px -90px 0px" }).observe($("nombre"));
+
+// Finalizar: lleva a los datos
+$("finish").addEventListener("click", () => {
+  $("datos").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  setTimeout(() => $("nombre").focus({ preventScroll: true }), reduceMotion ? 0 : 450);
+});
+
+update();
+
+/* ---------- Envío ---------- */
+function fail(msg, focusEl){
+  $("error").textContent = msg;
+  if (focusEl) focusEl.focus();
+}
+
+$("form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const nombre = $("nombre").value.trim();
+  const telefono = $("telefono").value.trim();
+  const digits = telefono.replace(/\D/g, "");
+
+  if (totalCombos() === 0) {
+    fail("Elegí al menos un combo para enviar el pedido.");
+    $("combos").scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+  if (nombre.length < 3) return fail("Escribí tu nombre y apellido.", $("nombre"));
+  if (digits.length < 8 || digits.length > 15) return fail("Revisá tu teléfono: ingresá el número con código de área.", $("telefono"));
+
+  $("error").textContent = "";
+  const btn = $("send");
+  btn.disabled = true; btn.textContent = "Enviando…";
+
+  // Trampa para bots: si el campo oculto tiene algo, fingimos éxito sin enviar.
+  const isBot = $("web").value.trim() !== "";
+
+  const data = new URLSearchParams();
+  data.set("nombre", nombre);
+  data.set("telefono", telefono);
+  qty.forEach((q, i) => data.set("combo_" + (i + 1), q));
+
+  try {
+    if (!isBot && CONFIG.SCRIPT_URL) {
+      await fetch(CONFIG.SCRIPT_URL, { method: "POST", mode: "no-cors", body: data });
+    }
+    showThanks();
+  } catch (err) {
+    btn.disabled = false; btn.textContent = "Enviar pedido";
+    fail("No pudimos enviar tu pedido. Revisá tu conexión e intentá de nuevo.");
+  }
+});
+
+function showThanks(){
+  const recap = $("recap");
+  recap.innerHTML = "";
+  qty.forEach((q, i) => {
+    if (q > 0) {
+      const li = document.createElement("li");
+      const a = document.createElement("span"); a.textContent = COMBOS[i].name + " × " + q;
+      const b = document.createElement("b"); b.textContent = COMBOS[i].price ? money(COMBOS[i].price * q) : "";
+      li.append(a, b); recap.appendChild(li);
+    }
+  });
+  if (allPriced()) {
+    const li = document.createElement("li"); li.className = "sum";
+    const a = document.createElement("span"); a.textContent = "Total";
+    const b = document.createElement("b"); b.textContent = money(totalAmount());
+    li.append(a, b); recap.appendChild(li);
+  }
+  $("view-form").hidden = true;
+  $("view-thanks").hidden = false;
+  refreshBar();
+  window.scrollTo(0, 0);
+  $("thanks-title").focus();
+}
+
+$("again").addEventListener("click", () => {
+  qty.fill(0);
+  document.querySelectorAll(".combo").forEach(li => { li.dataset.on = "false"; li.querySelector("output").textContent = "0"; });
+  $("form").reset();
+  $("send").disabled = false; $("send").textContent = "Enviar pedido";
+  $("view-thanks").hidden = true;
+  $("view-form").hidden = false;
+  update();
+  window.scrollTo(0, 0);
+});
+</script>
+</body>
+</html>
