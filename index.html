@@ -83,7 +83,7 @@ h2{font-family:var(--serif);font-weight:500;font-size:1.2rem;margin:0 0 4px}
 /* datos */
 .field{margin:0 0 18px}
 label{display:block;font-weight:500;margin:0 0 6px}
-input[type=text],input[type=tel]{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--surface);
+input[type=text],input[type=tel],input[type=email]{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--surface);
   border:1px solid var(--line);border-radius:10px;padding:13px 14px;min-height:48px}
 input::placeholder{color:var(--muted);opacity:.75}
 .trap{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
@@ -187,6 +187,10 @@ Cada propuesta se prepara con dedicación, combinando nuestros productos en caja
           <label for="telefono">Teléfono (WhatsApp)</label>
           <input type="tel" id="telefono" name="telefono" autocomplete="tel" inputmode="tel" placeholder="Ej.: 351 123 4567" required>
         </div>
+        <div class="field">
+          <label for="email">Correo electrónico</label>
+          <input type="email" id="email" name="email" autocomplete="email" inputmode="email" placeholder="Ej.: maria@correo.com" required>
+        </div>
         <div class="trap" aria-hidden="true">
           <label for="web">No completar este campo</label>
           <input type="text" id="web" name="web" tabindex="-1" autocomplete="off">
@@ -226,7 +230,7 @@ Cada propuesta se prepara con dedicación, combinando nuestros productos en caja
    ========================================================= */
 const CONFIG = {
   // Pegá acá la URL de tu Apps Script (termina en /exec).
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwOwoz96JXSlXhX8C_FEEyXickT9vDo7emwcTPL0Ur6Ekmk4jFFqbk77VBjT_O_jkstBg/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwD8P0RkgiwLC-2IIqRDujzitBVodKylLR9itmju4bdIhbq8J6BXFRUHOFjjDTOvhptKQ/exec",
   TITLE: "¡Armá tu pedido en 2 pasos simples!",
 
   // Imagen del encabezado (una sola). Dejá src vacío ("") para no mostrar ninguna.
@@ -468,6 +472,8 @@ $("form").addEventListener("submit", async e => {
   }
   if (nombre.length < 3) return fail("Escribí tu nombre y apellido.", $("nombre"));
   if (digits.length < 8 || digits.length > 15) return fail("Revisá tu teléfono: ingresá el número con código de área.", $("telefono"));
+  const email = $("email").value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("Revisá tu correo electrónico: tiene que ser una dirección válida, por ejemplo nombre@correo.com.", $("email"));
 
   $("error").textContent = "";
   const btn = $("send");
@@ -479,6 +485,7 @@ $("form").addEventListener("submit", async e => {
   const data = new URLSearchParams();
   data.set("nombre", nombre);
   data.set("telefono", telefono);
+  data.set("email", email);
   data.set("total", allPriced() ? totalAmount() : "");   // total que vio la clienta (con promos aplicadas)
   qty.forEach((q, i) => {
     data.set("combo_" + (i + 1), q);
