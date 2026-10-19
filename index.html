@@ -226,7 +226,7 @@ Cada propuesta se prepara con dedicación, combinando nuestros productos en caja
    ========================================================= */
 const CONFIG = {
   // Pegá acá la URL de tu Apps Script (termina en /exec).
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbygo1MRmx7xm-5rf2e3gQmFEihhSGKku-YchEq3RB5MjfijB6_tf2jtIYknMB5tLkRK7w/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwOwoz96JXSlXhX8C_FEEyXickT9vDo7emwcTPL0Ur6Ekmk4jFFqbk77VBjT_O_jkstBg/exec",
   TITLE: "¡Armá tu pedido en 2 pasos simples!",
 
   // Imagen del encabezado (una sola). Dejá src vacío ("") para no mostrar ninguna.
@@ -249,9 +249,9 @@ const CONFIG = {
 // ¡IMPORTANTE! Los precios de abajo son DE EJEMPLO: reemplazalos por los tuyos antes de publicar.
 const COMBOS = [
    // Así quedaría esta misma línea con promo (copiá y adaptá con tus precios):
-  // { name: "Bolsita aromatizante", desc: "", price: 2000, img: "Bolsa de Corcho.jpeg", promos: [ { cant: 2, precio: 3500 }, { cant: 3, precio: 5000 } ] },
+  // { name: "Bolsita aromatizante (corchos)", desc: "", price: 2000, img: "Bolsa de Corcho.jpeg", promos: [ { cant: 2, precio: 3500 }, { cant: 3, precio: 5000 } ] },
   { name: "Kit Alma", desc: "Vela + Bolsita aromática + Exfoliante", price: 13000, img: "Alma.jpeg" },
-  { name: "Bolsita aromatizante", desc: "Llevando 3 tenes promo", price: 2000, img: "Bolsa de Corcho.jpeg", promos: [ { cant: 3, precio: 5000 }] },
+  { name: "Bolsita aromatizante (corchos)", desc: "Llevando 3 tenes promo", price: 2000, img: "Bolsa de Corcho.jpeg", promos: [ { cant: 3, precio: 5000 }] },
   { name: "Combo 1", desc: "Aromatizante en spray + Vela en lata + Vela simple + Bolsita aromatizante", price: 17000, img: "Combo 1.jpeg" },
   { name: "Combo 2", desc: "Bolsa para auto + Aromatizante spray + Bolsita aromatizante", price: 15000, img: "Combo 2.jpeg" },
   { name: "Combo 3", desc: "Vela en lata + Vela simple + Bolsita aromatizante", price: 12000, img: "Combo 3.jpeg" },
@@ -479,7 +479,11 @@ $("form").addEventListener("submit", async e => {
   const data = new URLSearchParams();
   data.set("nombre", nombre);
   data.set("telefono", telefono);
-  qty.forEach((q, i) => data.set("combo_" + (i + 1), q));
+  data.set("total", allPriced() ? totalAmount() : "");   // total que vio la clienta (con promos aplicadas)
+  qty.forEach((q, i) => {
+    data.set("combo_" + (i + 1), q);
+    data.set("producto_" + (i + 1), COMBOS[i].name);   // el script ubica la columna por este nombre
+  });
 
   try {
     if (!isBot && CONFIG.SCRIPT_URL) {
